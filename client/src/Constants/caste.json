@@ -1,0 +1,11 @@
+[
+  { "label": "OC", "value": "OC" },
+  { "label": "BC-A", "value": "BC-A" },
+  { "label": "BC-B", "value": "BC-B" },
+  { "label": "BC-C", "value": "BC-C" },
+  { "label": "BC-D", "value": "BC-D" },
+  { "label": "BC-E", "value": "BC-E" },
+  { "label": "SC", "value": "SC" },
+  { "label": "ST", "value": "ST" },
+  { "label": "Other", "value": "Other" }
+]

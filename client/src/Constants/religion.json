@@ -1,0 +1,9 @@
+[
+  { "label": "Hinduism", "value": "Hindu" },
+  { "label": "Islam", "value": "Islam" },
+  { "label": "Christianity", "value": "Christianity" },
+  { "label": "Jainism", "value": "Jainism" },
+  { "label": "Buddhism", "value": "Buddhism" },
+  { "label": "Sikhism", "value": "Sikhism" },
+  { "label": "Other", "value": "Other" }
+]
