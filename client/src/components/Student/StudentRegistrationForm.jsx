@@ -127,7 +127,7 @@ const StudentRegistrationForm = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [encryptedOTP, setEncryptedOTP] = useState("");
@@ -153,10 +153,8 @@ const StudentRegistrationForm = () => {
       firstName: "",
       lastName: "",
       email: "",
-      whatsappCountryCode: null,
-      whatsappNumber: "",
+      phoneNumber: "",
       emailOtp: "",
-      phoneOtp: "",
       password: "",
       confirmPassword: "",
       university: null,
@@ -166,8 +164,7 @@ const StudentRegistrationForm = () => {
 
   // Watch form fields
   const email = watch("email");
-  const whatsappCountryCode = watch("whatsappCountryCode");
-  const whatsappNumber = watch("whatsappNumber");
+  const phoneNumber = watch("phoneNumber");
   const password = watch("password");
 
   const formatTime = (totalSeconds) => {
@@ -293,43 +290,9 @@ const StudentRegistrationForm = () => {
     },
   });
 
-  const sendPhoneOtpMutation = useMutation({
-    mutationFn: async (phoneDetails) => {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/student/verify-phone/otp`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(phoneDetails),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to send Phone OTP");
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setEncryptedOTP(data.encryptedOTP);
-      setIv(data.iv);
-      setOtpSent(true);
-      setOtpTimer(120);
-      setOtpVerificationMode("phone");
-    },
-    onError: (error) => {
-      toast.error(`${error}`);
-      resetOtpStates();
-    },
-  });
-
   const verifyOtpMutation = useMutation({
     mutationFn: async (data) => {
-      const verifyEndpoint =
-        otpVerificationMode === "email"
-          ? "/student/verify-otp/email"
-          : "/student/verify-otp/phone";
+      const verifyEndpoint = "/student/verify-otp/email";
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_API_URL}${verifyEndpoint}`,
@@ -352,11 +315,7 @@ const StudentRegistrationForm = () => {
       return response.json();
     },
     onSuccess: () => {
-      if (otpVerificationMode === "email") {
-        setEmailVerified(true);
-      } else {
-        setPhoneVerified(true);
-      }
+      setEmailVerified(true);
       resetOtpStates();
     },
     onError: (error) => {
@@ -371,19 +330,11 @@ const StudentRegistrationForm = () => {
   // Registration mutation
   const registrationMutation = useMutation({
     mutationFn: async (data) => {
-      // Ensure whatsappCountryCode exists and has a value property
-      const countryCode = data.whatsappCountryCode?.value;
-      if (!countryCode) {
-        throw new Error("Please select a country code");
-      }
-
-      const formattedWhatsappNumber = `${countryCode}${data.whatsappNumber}`;
-
       const requestBody = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        whatsappNumber: formattedWhatsappNumber,
+        phoneNumber: data.phoneNumber,
         password: data.password,
         universityId: data.university.value,
       };
@@ -448,11 +399,6 @@ const StudentRegistrationForm = () => {
         return;
       }
 
-      if (!phoneVerified) {
-        toast.error("Please verify your phone number");
-        return;
-      }
-
       if (data.password !== data.confirmPassword) {
         setError("confirmPassword", {
           type: "manual",
@@ -486,15 +432,6 @@ const StudentRegistrationForm = () => {
           return;
         }
         await sendEmailOtpMutation.mutateAsync(email);
-      } else if (source === "phone") {
-        if (!whatsappCountryCode || !whatsappNumber) {
-          toast.error("Please enter WhatsApp country code and number");
-          return;
-        }
-        const phoneDetails = {
-          phoneNumber: `+${whatsappCountryCode.value}${whatsappNumber}`,
-        };
-        await sendPhoneOtpMutation.mutateAsync(phoneDetails);
       }
     } catch (error) {
       console.error(`OTP sending error for ${source}:`, error);
@@ -505,7 +442,6 @@ const StudentRegistrationForm = () => {
   const isLoading =
     isSubmitting ||
     sendEmailOtpMutation.isPending ||
-    sendPhoneOtpMutation.isPending ||
     registrationMutation.isPending ||
     verifyOtpMutation.isPending;
 
@@ -594,7 +530,7 @@ const StudentRegistrationForm = () => {
                   />
                 </div>
                 <div className="pt-7">
-                  {!emailVerified && otpVerificationMode !== "phone" && (
+                  {!emailVerified && (
                     <button
                       type="button"
                       onClick={() => handleSendOtp("email")}
@@ -665,113 +601,23 @@ const StudentRegistrationForm = () => {
           <div className="space-y-4">
             <div className="flex flex-col space-y-4">
               <div className="flex items-start space-x-2">
-                <div className="w-1/3">
-                  <FormInput
-                    control={control}
-                    name="whatsappCountryCode"
-                    label="Country Code"
-                    disabled={phoneVerified}
-                  >
-                    {({ field }) => (
-                      <Select
-                        {...field}
-                        options={countryCodes.map((country) => ({
-                          value: country.code,
-                          label: `${country.iso} (+${country.code})`,
-                          iso: country.iso,
-                        }))}
-                        getOptionLabel={(option) => `${option.label}`}
-                        getOptionValue={(option) => option.value}
-                        placeholder="Select"
-                        styles={customSelectStyles}
-                        isDisabled={phoneVerified}
-                      />
-                    )}
-                  </FormInput>
-                </div>
                 <div className="flex-grow">
                   <FormInput
                     control={control}
-                    name="whatsappNumber"
+                    name="phoneNumber"
                     type="tel"
-                    label="WhatsApp Number"
-                    placeholder="Enter WhatsApp number"
-                    disabled={isLoading || phoneVerified}
+                    label="Phone Number"
+                    placeholder="Enter phone number"
+                    disabled={isLoading}
                     validation={{
                       pattern: {
                         value: /^[0-9]{10}$/,
-                        message: "Invalid WhatsApp number",
+                        message: "Invalid phone number",
                       },
                     }}
                   />
                 </div>
-                <div className="pt-7">
-                  {!phoneVerified && otpVerificationMode !== "email" && (
-                    <button
-                      type="button"
-                      onClick={() => handleSendOtp("phone")}
-                      disabled={
-                        isLoading ||
-                        sendPhoneOtpMutation.isPending ||
-                        otpTimer > 0 ||
-                        !whatsappCountryCode ||
-                        !whatsappNumber
-                      }
-                      className="whitespace-nowrap bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {sendPhoneOtpMutation.isPending
-                        ? "Sending..."
-                        : otpTimer > 0
-                        ? `Retry (${formatTime(otpTimer)})`
-                        : "Send OTP"}
-                    </button>
-                  )}
-                  {phoneVerified && (
-                    <div className="flex items-center text-green-500">
-                      <CheckCircle size={20} className="mr-1" />
-                      <span className="text-sm">Verified</span>
-                    </div>
-                  )}
-                </div>
               </div>
-
-              {otpSent && otpVerificationMode === "phone" && (
-                <div className="flex items-start space-x-2">
-                  <div className="flex-grow">
-                    <FormInput
-                      control={control}
-                      name="phoneOtp"
-                      type="text"
-                      label="WhatsApp OTP"
-                      placeholder="Enter OTP sent to your WhatsApp"
-                      disabled={isLoading}
-                      validation={{
-                        pattern: {
-                          value: /^[0-9]{6}$/,
-                          message: "Invalid OTP format",
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="pt-7">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        verifyOtpMutation.mutate({ otp: watch("phoneOtp") })
-                      }
-                      disabled={isLoading || !watch("phoneOtp")}
-                      className="whitespace-nowrap bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Verify
-                    </button>
-                  </div>
-                </div>
-              )}
-              {otpSent && otpVerificationMode === "phone" && (
-                <p className="text-sm text-gray-500 -mt-2">
-                  OTP will expire in {formatTime(otpTimer)}
-                </p>
-              )}
             </div>
           </div>
 
@@ -843,7 +689,6 @@ const StudentRegistrationForm = () => {
           />
 
           {(sendEmailOtpMutation.error ||
-            sendPhoneOtpMutation.error ||
             registrationMutation.error) && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -851,7 +696,6 @@ const StudentRegistrationForm = () => {
               className="text-red-500 text-sm text-center"
             >
               {sendEmailOtpMutation.error?.message ||
-                sendPhoneOtpMutation.error?.message ||
                 registrationMutation.error?.message}
             </motion.p>
           )}
@@ -860,7 +704,6 @@ const StudentRegistrationForm = () => {
             type="submit"
             disabled={
               !emailVerified ||
-              !phoneVerified ||
               isLoading ||
               Object.values(passwordStrength).some((v) => !v)
             }

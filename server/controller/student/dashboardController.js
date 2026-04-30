@@ -23,10 +23,11 @@ exports.getStudentDashboard = async (req, res) => {
     res.status(200).json({
       student: {
         name,
-        email: student.personal.collegeEmail,
-        rollNumber: student.academic.rollNumber,
-        branch: student.academic.branch,
-        program: student.academic.degreeProgram,
+        email: student.personal?.collegeEmail,
+        rollNumber: student.academic?.rollNumber,
+        branch: student.academic?.branch,
+        program: student.academic?.degreeProgram,
+        predictions: student.predictions,
       },
       university: {
         _id: university._id,

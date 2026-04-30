@@ -2,20 +2,30 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import Cookies from "js-cookie";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
+} from "recharts";
 import ErrorOverlay from "../Global/ErrorOverlay";
 import LoadingOverlay from "../Global/LoadingOverlay";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const jwtToken = Cookies.get("userCookie");
-
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["student", "get", "dashboard"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_API_URL}/student/get/dashboard`,
+          `${import.meta.env.VITE_SERVER_API_URL}/student/get/dashboard?t=${new Date().getTime()}`,
           {
             headers: {
               Authorization: `Bearer ${jwtToken}`,
@@ -31,7 +41,7 @@ const StudentDashboard = () => {
         if (error.response) {
           if (error.response.status === 300 && error.response.data.redirect) {
             navigate(error.response.data.redirect);
-            return null;
+            throw new Error('Redirecting to Profile Completion.......');
           }
           if (error.response.status === 401) {
             throw new Error("Unauthorized access");
@@ -63,6 +73,16 @@ const StudentDashboard = () => {
   const student = data?.student;
   const university = data?.university;
 
+  // Format chart data for visualization
+  const chartData = student?.predictions?.company_probabilities
+    ? student.predictions.company_probabilities
+      .map(c => ({
+        name: c.company,
+        probability: Number((c.probability * 100).toFixed(1))
+      }))
+      .sort((a, b) => b.probability - a.probability)
+    : [];
+
   return (
     <div className="p-8 space-y-8 pt-4 bg-gray-50">
       {/* Greeting Header */}
@@ -70,6 +90,127 @@ const StudentDashboard = () => {
         <h1 className="text-3xl font-semibold text-center">
           {getGreeting()}, {student.name}
         </h1>
+      </div>
+
+      {/* AI Prediction Card */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <span className="mr-2">🔮</span> AI Placement Predictor
+            </h2>
+          </div>
+
+          {student.predictions && student.predictions.placement_probability !== undefined ? (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 bg-indigo-50 rounded-lg border border-indigo-100 flex flex-col justify-center items-center text-center shadow-inner">
+                  <p className="text-sm font-semibold text-indigo-800 mb-2 uppercase tracking-wider">Placement Probability</p>
+                  <p className="text-5xl font-extrabold text-indigo-600">
+                    {(student.predictions.placement_probability * 100).toFixed(1)}%
+                  </p>
+                </div>
+                <div className="p-6 bg-blue-50 rounded-lg border border-blue-100 flex flex-col justify-center items-center text-center shadow-inner">
+                  <p className="text-sm font-semibold text-blue-800 mb-2 uppercase tracking-wider">Top Company Match</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {student.predictions.company || "None"}
+                  </p>
+                </div>
+              </div>
+
+              {chartData.length > 0 && (
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Detailed Company Match Probabilities</h3>
+                  <div className="h-80 w-full mb-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 45 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: '#6B7280', fontSize: 13, fontWeight: 500 }}
+                          interval={0}
+                          angle={-45}
+                          textAnchor="end"
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: '#9CA3AF', fontSize: 13 }}
+                          domain={[0, 100]}
+                          tickFormatter={(val) => `${val}%`}
+                        />
+                        <Tooltip
+                          cursor={{ fill: '#F8FAFC' }}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', padding: '12px' }}
+                          itemStyle={{ fontWeight: 'bold' }}
+                          formatter={(value) => [`${value}%`, 'Placement Match']}
+                        />
+                        <Bar dataKey="probability" radius={[6, 6, 0, 0]} animationDuration={1500}>
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#4F46E5' : '#818CF8'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {/* Evaluated Metrics (Read Only) */}
+              <div className="pt-6 border-t border-gray-100 mt-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-6">Profile Metrics Evaluated</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">CGPA</p>
+                    <p className="text-2xl font-black text-gray-800">{student.predictions.cgpa || "N/A"}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Avg Test Score</p>
+                    <p className="text-2xl font-black text-gray-800">{student.predictions.avg_test_score || "N/A"}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Technical Score</p>
+                    <p className="text-2xl font-black text-gray-800">{student.predictions.technical_score || "N/A"}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Aptitude Score</p>
+                    <p className="text-2xl font-black text-gray-800">{student.predictions.aptitude_score || "N/A"}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Projects</p>
+                    <p className="text-2xl font-black text-gray-800">{student.predictions.num_projects || 0}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Internships</p>
+                    <p className="text-2xl font-black text-gray-800">{student.predictions.num_internships || 0}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200 col-span-2 md:col-span-2">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-3">Technical Skills</p>
+                    <div className="flex flex-wrap gap-2">
+                      {student.predictions.skills && student.predictions.skills.length > 0 ? (
+                        student.predictions.skills.map(skill => (
+                          <span key={skill} className="px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-semibold shadow-sm border border-indigo-200">
+                            {skill}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 font-medium">None Listed</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            <div className="p-8 bg-gray-50 rounded-lg text-center text-gray-600 border border-gray-200">
+              <p className="text-lg font-medium">No prediction data available yet.</p>
+              <p className="text-sm mt-2">Your faculty will review your profile to calculate your placement chances.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* University Profile Card */}
@@ -236,7 +377,7 @@ const StudentDashboard = () => {
               </h4>
               <div className="flex flex-wrap gap-2">
                 {university.degreePrograms &&
-                university.degreePrograms.length > 0 ? (
+                  university.degreePrograms.length > 0 ? (
                   university.degreePrograms.map((program, index) => (
                     <span
                       key={index}

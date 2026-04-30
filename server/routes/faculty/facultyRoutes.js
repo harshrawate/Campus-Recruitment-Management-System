@@ -88,16 +88,16 @@ router.post(
   notificationController.sendEmailNotification
 );
 
-router.get(
-  "/notifications/whatsapp-templates/:notificationType",
+router.post(
+  "/student/:id/predict",
   verifyTokenAndRole(),
-  notificationController.getWhatsAppTemplates
+  studentController.updateMarksAndPredict
 );
 
-router.post(
-  "/notifications/send-whatsapp",
+router.get(
+  "/student/:id",
   verifyTokenAndRole(),
-  notificationController.sendWhatsappNotification
+  studentController.getStudentById
 );
 
 module.exports = router;

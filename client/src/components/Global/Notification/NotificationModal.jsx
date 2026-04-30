@@ -5,8 +5,6 @@ import { X } from "lucide-react";
 import NotificationTypes from "./NotificationTypes";
 import NotificationMethods from "./NotificationMethods";
 import EmailForm from "./EmailForm";
-import WhatsAppTemplateForm from "./WhatsAppTemplateForm";
-import DualNotificationForm from "./DualNotificationForm";
 
 const NotificationModal = ({ students, onClose }) => {
   const [selectedType, setSelectedType] = useState(null);
@@ -46,8 +44,6 @@ const NotificationModal = ({ students, onClose }) => {
 
     const methodNames = {
       email: "Email Notification",
-      whatsapp: "WhatsApp Notification",
-      both: "Email & WhatsApp Notification",
     };
 
     return `${typeName} - ${methodNames[selectedMethod]}`;
@@ -99,26 +95,6 @@ const NotificationModal = ({ students, onClose }) => {
 
           {selectedType && selectedMethod === "email" && (
             <EmailForm
-              students={students}
-              notificationType={selectedType}
-              onBack={() => setSelectedMethod(null)}
-              onSuccess={() => setStatus("success")}
-              onError={() => setStatus("error")}
-            />
-          )}
-
-          {selectedType && selectedMethod === "whatsapp" && (
-            <WhatsAppTemplateForm
-              students={students}
-              notificationType={selectedType}
-              onBack={() => setSelectedMethod(null)}
-              onSuccess={() => setStatus("success")}
-              onError={() => setStatus("error")}
-            />
-          )}
-
-          {selectedType && selectedMethod === "both" && (
-            <DualNotificationForm
               students={students}
               notificationType={selectedType}
               onBack={() => setSelectedMethod(null)}

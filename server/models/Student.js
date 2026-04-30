@@ -51,7 +51,7 @@ const studentSchema = new mongoose.Schema(
     personal: {
       firstName: { type: String, required: true, trim: true },
       lastName: { type: String, required: true, trim: true },
-      whatsappNumber: { type: String, required: true, trim: true },
+      phoneNumber: { type: String, required: true, trim: true },
       collegeEmail: {
         type: String,
         required: true,
@@ -189,6 +189,28 @@ const studentSchema = new mongoose.Schema(
       lastPasswordChange: Date,
       isDeactivated: { type: Boolean, default: false },
     },
+
+    predictions: {
+      //student_id,name,branch,cgpa,avg_test_score,technical_score,aptitude_score,num_projects,num_internships,skills,placed,company,salary
+      student_id: String,
+      name: String,
+      branch: String,
+      cgpa: Number,
+      avg_test_score: Number,
+      technical_score: Number,
+      aptitude_score: Number,
+      num_projects: Number,
+      num_internships: Number,
+      skills: [String],
+      placement_probability: Number,
+      company: String,
+      company_probabilities: [{
+        company: String,
+        probability: Number
+      }],
+      salary: Number,
+    },
+
   },
   {
     timestamps: true,

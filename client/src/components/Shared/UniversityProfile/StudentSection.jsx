@@ -18,7 +18,7 @@ const StudentSection = ({ students = [], universityId }) => {
       student.personal.firstName &&
       student.personal.lastName &&
       student.personal.collegeEmail &&
-      student.personal.whatsappNumber;
+      student.personal.phoneNumber;
 
     const hasRequiredAcademic =
       student.academic.rollNumber &&

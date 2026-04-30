@@ -78,27 +78,24 @@ const StudentProfileForm = () => {
   } = useQuery({
     queryKey: ["student", "complete", "profile"],
     queryFn: fetchProfile,
-    onSuccess: (data) => {
-      if (data.data.profileStatus.isComplete && !isUpdateMode) {
-        if (!isUpdateMode) {
-          navigate("/student/dashboard");
-        }
-      } else {
-        reset(data.data);
-      }
-    },
-    onError: (error) => {
-      console.error("Profile fetch error:", error);
-      toast.error("Failed to load profile");
-    },
   });
+
+  useEffect(() => {
+    if (profileData && profileData.data) {
+      if (profileData.data.profileStatus?.isComplete && !isUpdateMode) {
+        navigate("/student/dashboard");
+      } else {
+        reset(profileData.data);
+      }
+    }
+  }, [profileData, isUpdateMode, navigate, reset]);
 
   const validateForm = async () => {
     const fieldsToValidate = [
       ...[
         "personal.firstName",
         "personal.lastName",
-        "personal.whatsappNumber",
+        "personal.phoneNumber",
         "personal.collegeEmail",
         "personal.gender",
         "personal.caste",
@@ -202,7 +199,7 @@ const StudentProfileForm = () => {
           personal: {
             firstName: data.firstName,
             lastName: data.lastName,
-            whatsappNumber: data.whatsappNumber,
+            phoneNumber: data.phoneNumber,
             collegeEmail: data.collegeEmail,
             personalEmail: data.personalEmail,
             gender: data.gender,

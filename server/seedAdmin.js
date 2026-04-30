@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const Admin = require("./models/Admin/Admin"); // Update with the actual path to your Admin model
+const Admin = require("./models/Admin"); // Import Admin model
 require("dotenv").config();
 
 const seedAdmin = async () => {
@@ -18,10 +18,10 @@ const seedAdmin = async () => {
 
     // Create the new seed admin
     const admin = new Admin({
-      name: "Mani Charan Reddy Gade",
-      email: "gade.manicharan12@gmail.com",
-      password: 123456,
-      role: "super admin", // Set role to "super admin"
+      name: "Harsh Rawate",
+      email: "harshrawate7@gmail.com",
+      password: "Harsh@1357", // Make sure this is a string
+      role: "Super Admin", // Must match exactly: "Super Admin" or "Admin"
     });
 
     // Save the admin

@@ -6,7 +6,7 @@ const {
   decryptData,
 } = require("../../services/encryptionService");
 const { sendOTPMail } = require("../../services/emailService");
-const { sendVerificationCode } = require("../../services/whatsappService");
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
@@ -15,7 +15,7 @@ exports.getMailOtP = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const student = await Student.findOne({ collegeEmail: email });
+    const student = await Student.findOne({ "personal.collegeEmail": email });
     if (student) {
       return res.status(400).json({ message: "Student already exists" });
     }
@@ -53,46 +53,7 @@ exports.verifyMailOtp = async (req, res) => {
   }
 };
 
-exports.getWhatsappOtp = async (req, res) => {
-  try {
-    const { phoneNumber } = req.body;
 
-    const student = await Student.findOne({ whatsappNumber: phoneNumber });
-    if (student) {
-      return res.status(400).json({ message: "Mobile Number already exists" });
-    }
-    const otp = generateOTP();
-    const { iv, encryptedData: encryptedOTP } = encryptData(otp);
-    console.log(phoneNumber, otp, encryptedOTP, iv);
-    const message = await sendVerificationCode(phoneNumber, otp);
-
-    console.log(message);
-
-    res
-      .status(200)
-      .json({ message: "OTP sent to your number", encryptedOTP, iv });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Error generating OTP" });
-  }
-};
-
-exports.verifyWhatsappOtp = async (req, res) => {
-  try {
-    const { otp, encryptedOTP, iv } = req.body;
-    if (!encryptedOTP || !iv) {
-      return res.status(400).json({ message: "Error during OTP verification" });
-    }
-    const decryptedOTP = decryptData(encryptedOTP, iv);
-    if (otp !== decryptedOTP) {
-      return res.status(401).json({ message: "Invalid OTP" });
-    }
-    res.status(200).json({ message: "OTP verified successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Error verifying OTP" });
-  }
-};
 
 exports.createStudentAccount = async (req, res) => {
   const session = await mongoose.startSession();
@@ -102,7 +63,7 @@ exports.createStudentAccount = async (req, res) => {
       firstName,
       lastName,
       email,
-      whatsappNumber,
+      phoneNumber,
       password,
       universityId,
       rollNumber,
@@ -137,7 +98,7 @@ exports.createStudentAccount = async (req, res) => {
     if (
       !firstName ||
       !lastName ||
-      !whatsappNumber ||
+      !phoneNumber ||
       !password ||
       !universityId
     ) {
@@ -153,7 +114,7 @@ exports.createStudentAccount = async (req, res) => {
       personal: {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        whatsappNumber: whatsappNumber.trim(),
+        phoneNumber: phoneNumber.trim(),
         collegeEmail: email.toLowerCase().trim(),
       },
       academic: {
@@ -297,7 +258,7 @@ exports.completeProfile = async (req, res) => {
 
     // Update all profile fields
     Object.assign(student, profileData);
-    student.isProfileComplete = true;
+    student.auth.isProfileComplete = true;
 
     await student.save();
 

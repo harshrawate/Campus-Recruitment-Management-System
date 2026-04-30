@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const { Student } = require("../models/Student");
 const { sendProfileUpdateReminderMail } = require("./emailService");
-const {sendProfileUpdateReminder} = require("./whatsappService")
+
 
 exports.scheduleProfileUpdateReminders = () => {
   // Validate cron expression
@@ -45,10 +45,7 @@ exports.scheduleProfileUpdateReminders = () => {
               student.personal.firstName
             );
 
-            await sendProfileUpdateReminder(
-              student.personal.whatsappNumber,
-              student.personal.firstName
-            );
+
 
             successCount++;
           } catch (error) {

@@ -34,6 +34,7 @@ import FilteredStudent from "./components/Faculty/FilteredStudent";
 import FacultyAnalytics from "./components/Faculty/FacultyAnalytics";
 import FacultyCompanies from "./components/Faculty/Placements/FacultyComapnies";
 import CompanyProfile from "./components/Faculty/Placements/CompanyProfile";
+import StudentPredictionResults from "./components/Faculty/StudentPredictionResults";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -87,6 +88,7 @@ const App = () => {
           <Route path="/faculty/team" element={<FacultyTeam />} />
           <Route path="/faculty/students" element={<StudentList />} />
           <Route path="/faculty/filter/student" element={<FilteredStudent />} />
+          <Route path="/faculty/student/:id/prediction" element={<StudentPredictionResults />} />
           <Route path="/faculty/analytics" element={<FacultyAnalytics />} />
           <Route path="/faculty/companies" element={<FacultyCompanies />} />
         </Route>

@@ -140,6 +140,7 @@ exports.updateStudentProfile = async (req, res) => {
     }
 
     student.auth.isProfileComplete = true;
+    student.markModified('auth');
     await student.save();
 
     res.status(200).json({

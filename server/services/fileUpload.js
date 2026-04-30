@@ -15,6 +15,7 @@ const uploadToS3 = async (file, folder) => {
       Key: fullPath,
       Body: file.buffer,
       ContentType: file.mimetype,
+      ACL: "public-read",
     };
 
     const result = await s3.upload(params).promise();
