@@ -477,8 +477,8 @@ const StudentProfile = () => {
               icon={Mail}
             />
             <InfoField
-              label="WhatsApp"
-              value={student.personal.whatsappNumber}
+              label="Phone Number"
+              value={student.personal.phoneNumber}
               icon={Phone}
             />
             <InfoField

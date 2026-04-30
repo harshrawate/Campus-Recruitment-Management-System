@@ -10,21 +10,6 @@ const NotificationMethods = ({ onSelectMethod }) => {
       title: "Email Notification",
       icon: <Mail className="w-6 h-6" />,
     },
-    {
-      id: "whatsapp",
-      title: "WhatsApp Notification",
-      icon: <MessageSquare className="w-6 h-6" />,
-    },
-    {
-      id: "both",
-      title: "Email & WhatsApp",
-      icon: (
-        <div className="flex space-x-1">
-          <Mail className="w-6 h-6" />
-          <MessageSquare className="w-6 h-6" />
-        </div>
-      ),
-    },
   ];
 
   return (

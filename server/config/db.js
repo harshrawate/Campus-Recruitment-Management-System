@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const {initializeIndexes}=require("../models/Student")
 
+require("dotenv").config();
+
 const connectDB = async () => {
   try {
     await mongoose.connect(

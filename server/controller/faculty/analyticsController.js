@@ -96,6 +96,7 @@ exports.getAnalytics = async (req, res) => {
         "academic.backlogs": 1,
         "placement.isPlaced": 1,
         "placement.offers": 1,
+        "predictions": 1,
       })
       .lean();
 
@@ -129,13 +130,20 @@ function calculateAnalytics(students) {
     const yearlyStudents = students.filter(
       (s) => s.academic.graduationYear === year
     );
-    const placedStudents = yearlyStudents.filter((s) => s.placement.isPlaced);
+    const placedStudents = yearlyStudents.filter((s) => 
+      s.placement?.isPlaced || (s.predictions && s.predictions.placement_probability >= 0.5)
+    );
 
-    // Gather all package values from offers
-    const packages = placedStudents
-      .flatMap((s) => s.placement.offers || [])
-      .map((o) => o.ctc)
-      .filter(Boolean);
+    // Gather all package values from offers or AI predictions
+    const packages = [];
+    placedStudents.forEach(s => {
+      // AI Salary is exact (e.g. 500000), convert to LPA (5.0)
+      if (s.predictions && s.predictions.salary) {
+        packages.push(Number(s.predictions.salary) / 100000);
+      } else if (s.placement && s.placement.offers) {
+        s.placement.offers.forEach(o => o.ctc && packages.push(o.ctc));
+      }
+    });
 
     // Calculate package statistics
     placementStats[year] = {
@@ -160,7 +168,18 @@ function calculateAnalytics(students) {
 
   // Calculate company, industry, and role statistics
   students.forEach((student) => {
-    if (student.placement.offers?.length) {
+    // Process AI Predictions
+    if (student.predictions && student.predictions.placement_probability >= 0.5 && student.predictions.company) {
+      const company = student.predictions.company;
+      companyStats[company] = (companyStats[company] || 0) + 1;
+      
+      // Fallbacks as ML dataset does not define roles/industry
+      industryStats["IT Services"] = (industryStats["IT Services"] || 0) + 1;
+      roleStats["Software Engineer"] = (roleStats["Software Engineer"] || 0) + 1;
+    }
+
+    // Process Manual Placement Offers (Legacy compatibility)
+    if (student.placement?.offers?.length) {
       student.placement.offers.forEach((offer) => {
         if (offer.company)
           companyStats[offer.company] = (companyStats[offer.company] || 0) + 1;

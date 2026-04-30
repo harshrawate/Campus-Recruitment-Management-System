@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   Filter,
@@ -142,6 +143,19 @@ const FilteredStudents = () => {
   const [tempSelectedDegree, setTempSelectedDegree] = useState(null);
   const [branches, setBranches] = useState([]);
   const [localData, setLocalData] = useState([]);
+  
+  // Faculty Prediction State
+  const [predictModalOpen, setPredictModalOpen] = useState(false);
+  const [selectedStudentForPrediction, setSelectedStudentForPrediction] = useState(null);
+  const [isPredictEditMode, setIsPredictEditMode] = useState(true);
+  const [predictionData, setPredictionData] = useState({
+    avg_test_score: "",
+    technical_score: "",
+    aptitude_score: "",
+    num_projects: "",
+    num_internships: "",
+    skills: ""
+  });
   const [placementStatus, setPlacementStatus] = useState({
     value: "all",
     label: "All Placement Status",
@@ -154,6 +168,53 @@ const FilteredStudents = () => {
   ];
 
   const jwtToken = Cookies.get("userCookie");
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const predictMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_API_URL}/faculty/student/${selectedStudentForPrediction._id}/predict`,
+        data,
+        { headers: { Authorization: `Bearer ${jwtToken}` } }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setPredictModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      navigate(`/faculty/student/${selectedStudentForPrediction._id}/prediction`);
+    },
+    onError: (err) => {
+      alert("Failed to run prediction: " + (err.response?.data?.message || err.message));
+    }
+  });
+
+  const handleOpenPredictModal = (student) => {
+    setSelectedStudentForPrediction(student);
+    if (student.predictions) {
+      setPredictionData({
+        avg_test_score: student.predictions.avg_test_score ?? "",
+        technical_score: student.predictions.technical_score ?? "",
+        aptitude_score: student.predictions.aptitude_score ?? "",
+        num_projects: student.predictions.num_projects ?? "",
+        num_internships: student.predictions.num_internships ?? "",
+        skills: student.predictions.skills ? student.predictions.skills.join(", ") : ""
+      });
+      setIsPredictEditMode(false);
+    } else {
+      setPredictionData({
+        avg_test_score: "",
+        technical_score: "",
+        aptitude_score: "",
+        num_projects: "",
+        num_internships: "",
+        skills: student.professional?.skills ? student.professional.skills.join(", ") : ""
+      });
+      setIsPredictEditMode(true);
+    }
+    setPredictModalOpen(true);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -676,6 +737,9 @@ const FilteredStudents = () => {
                         </div>
                       </th>
                     ))}
+                    <th className="p-3 cursor-pointer relative text-left text-sm font-semibold text-gray-700">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -697,6 +761,14 @@ const FilteredStudents = () => {
                             : getNestedValue(student, column.path)}
                         </td>
                       ))}
+                      <td className="p-3 text-sm">
+                        <button 
+                          onClick={() => handleOpenPredictModal(student)}
+                          className="px-3 py-1.5 bg-indigo-100 text-indigo-700 flex items-center gap-1 rounded hover:bg-indigo-200 transition-colors shadow-sm"
+                        >
+                          <span className="text-xs">🔮</span> Predict
+                        </button>
+                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -782,6 +854,78 @@ const FilteredStudents = () => {
             >
               Apply Filters
             </motion.button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* AI Prediction Modal */}
+      <Modal
+        isOpen={predictModalOpen}
+        onClose={() => setPredictModalOpen(false)}
+        title="🔮 AI Prediction Mode"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 border-b pb-3 mb-4">
+            Enter the academic metrics for <span className="font-semibold text-gray-800">{selectedStudentForPrediction?.personal?.firstName} {selectedStudentForPrediction?.personal?.lastName}</span> to calculate their placement probability and best-fit company.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Average Test Score</label>
+              <input type="number" disabled={!isPredictEditMode} className="w-full px-3 py-2 border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500" value={predictionData.avg_test_score} onChange={(e) => setPredictionData({...predictionData, avg_test_score: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Technical Score</label>
+              <input type="number" disabled={!isPredictEditMode} className="w-full px-3 py-2 border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500" value={predictionData.technical_score} onChange={(e) => setPredictionData({...predictionData, technical_score: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Aptitude Score</label>
+              <input type="number" disabled={!isPredictEditMode} className="w-full px-3 py-2 border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500" value={predictionData.aptitude_score} onChange={(e) => setPredictionData({...predictionData, aptitude_score: e.target.value})} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Total Projects</label>
+              <input type="number" disabled={!isPredictEditMode} className="w-full px-3 py-2 border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500" value={predictionData.num_projects} onChange={(e) => setPredictionData({...predictionData, num_projects: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Internship Count</label>
+              <input type="number" disabled={!isPredictEditMode} className="w-full px-3 py-2 border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500" value={predictionData.num_internships} onChange={(e) => setPredictionData({...predictionData, num_internships: e.target.value})} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Skills (comma separated)</label>
+              <input type="text" disabled={!isPredictEditMode} className="w-full px-3 py-2 border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500" value={predictionData.skills} onChange={(e) => setPredictionData({...predictionData, skills: e.target.value})} placeholder="e.g. React, Node.js, Python" />
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center mt-6 pt-4 border-t">
+            {selectedStudentForPrediction?.predictions && !isPredictEditMode ? (
+              <button 
+                onClick={() => setIsPredictEditMode(true)} 
+                className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-medium hover:bg-indigo-200"
+              >
+                Edit Marks
+              </button>
+            ) : (
+              <div></div>
+            )}
+            
+            <div className="flex gap-3">
+              <button onClick={() => setPredictModalOpen(false)} className="px-4 py-2 bg-gray-100 rounded-lg text-gray-600 font-medium hover:bg-gray-200">Cancel</button>
+              {isPredictEditMode && (
+                <button 
+                  onClick={() => predictMutation.mutate({
+                    ...predictionData,
+                    skills: predictionData.skills.split(",").map(s => s.trim()).filter(Boolean)
+                  })} 
+                  disabled={predictMutation.isPending} 
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium shadow-md hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {predictMutation.isPending ? "Predicting..." : "Update & Predict"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </Modal>

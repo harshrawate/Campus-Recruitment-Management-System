@@ -21,7 +21,7 @@ const PersonalInfoStep = ({
   // Extract values from currentValues with fallbacks
   const firstName = currentValues?.firstName || "";
   const lastName = currentValues?.lastName || "";
-  const whatsappNumber = currentValues?.whatsappNumber || "";
+  const phoneNumber = currentValues?.phoneNumber || "";
   const collegeEmail = currentValues?.collegeEmail || "";
   const personalEmail = currentValues?.personalEmail || "";
   const gender = currentValues?.gender || "";
@@ -42,7 +42,7 @@ const PersonalInfoStep = ({
   useEffect(() => {
     setValue("firstName", firstName);
     setValue("lastName", lastName);
-    setValue("whatsappNumber", whatsappNumber);
+    setValue("phoneNumber", phoneNumber);
     setValue("collegeEmail", collegeEmail);
     setValue("personalEmail", personalEmail || "");
     setValue("gender", gender || "");
@@ -139,15 +139,15 @@ const PersonalInfoStep = ({
           </FormField>
         </div>
         <div className="md:col-span-4">
-          <FormField label="WhatsApp Number" error={errors.whatsappNumber}>
+          <FormField label="Phone Number" error={errors.phoneNumber}>
             <Controller
-              name="whatsappNumber"
+              name="phoneNumber"
               control={control}
               render={({ field }) => (
                 <input
                   {...field}
                   type="text"
-                  value={formatPhoneNumber(whatsappNumber)}
+                  value={formatPhoneNumber(phoneNumber)}
                   disabled
                   className="w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
                 />

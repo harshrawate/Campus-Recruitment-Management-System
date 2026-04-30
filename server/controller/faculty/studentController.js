@@ -1,5 +1,6 @@
 const Faculty = require("../../models/Faculty");
 const { Student } = require("../../models/Student");
+const axios = require("axios");
 const University = require("../../models/University");
 const { sendBulkNotification } = require("../../services/emailService");
 
@@ -208,3 +209,98 @@ exports.getDegreePrograms = async (req, res) => {
   }
 };
 
+exports.updateMarksAndPredict = async (req, res) => {
+  try {
+    const { id } = req.params; // Student ID
+    const {
+      cgpa,
+      avg_test_score,
+      technical_score,
+      aptitude_score,
+      num_projects,
+      num_internships,
+      skills
+    } = req.body;
+
+    const student = await Student.findOne({ 
+      _id: id,
+      "academic.university": req.faculty.university,
+      "auth.isDeactivated": false
+    });
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found or unauthorized." });
+    }
+
+    const name = `${student.personal?.firstName || ""} ${student.personal?.lastName || ""}`.trim();
+    const finalBranch = student.academic?.branch || "Computer Science";
+    const finalSkills = skills && Array.isArray(skills) && skills.length > 0 ? skills : (student.professional?.skills || []);
+    const finalCgpa = Number(cgpa || student.academic?.cgpa || 0);
+
+    const payload = {
+      student_id: id.toString(),
+      name: name,
+      branch: finalBranch,
+      cgpa: finalCgpa,
+      avg_test_score: Number(avg_test_score || 0),
+      technical_score: Number(technical_score || 0),
+      aptitude_score: Number(aptitude_score || 0),
+      num_projects: Number(num_projects || 0),
+      num_internships: Number(num_internships || 0),
+      skills: finalSkills
+    };
+
+    const pythonApiUrl = process.env.ML_API_URL || "http://127.0.0.1:8000/predict";
+    const response = await axios.post(pythonApiUrl, payload);
+    const predictionResult = response.data;
+
+    const companyProbsArray = Object.entries(predictionResult.company_probabilities || {}).map(([company, probability]) => ({
+      company,
+      probability
+    }));
+
+    const newPredictionData = {
+      ...payload,
+      placement_probability: predictionResult.probability,
+      company: predictionResult.company,
+      company_probabilities: companyProbsArray,
+      salary: predictionResult.salary || null
+    };
+
+    student.predictions = newPredictionData;
+    await student.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Marks updated and prediction successful.",
+      data: newPredictionData
+    });
+
+  } catch (error) {
+    console.error("Error in AI prediction via Faculty:", error.message);
+    res.status(500).json({ 
+      status: "error", 
+      message: "Failed to generate prediction.", 
+      error: error.response?.data || error.message 
+    });
+  }
+};
+
+exports.getStudentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const student = await Student.findOne({ 
+      _id: id,
+      "academic.university": req.faculty.university
+    });
+    
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+    
+    res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    console.error("Error fetching student:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

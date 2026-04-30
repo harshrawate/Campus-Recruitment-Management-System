@@ -33,7 +33,7 @@ exports.completeUniversityData = async (req, res) => {
       .populate({
         path: "students",
         select:
-          "personal.firstName personal.lastName personal.collegeEmail personal.whatsappNumber academic.rollNumber academic.degreeProgram academic.branch academic.section academic.graduationYear auth.isDeactivated auth.loginHistory auth.status auth.isProfileComplete",
+          "personal.firstName personal.lastName personal.collegeEmail personal.phoneNumber academic.rollNumber academic.degreeProgram academic.branch academic.section academic.graduationYear auth.isDeactivated auth.loginHistory auth.status auth.isProfileComplete",
       })
       .lean();
 

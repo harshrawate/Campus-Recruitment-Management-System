@@ -123,7 +123,7 @@ const StudentCard = ({ student, universityId }) => {
     firstName = "",
     lastName = "",
     collegeEmail = "",
-    whatsappNumber = "",
+    phoneNumber = "",
   } = personal;
 
   const {
@@ -200,7 +200,7 @@ const StudentCard = ({ student, universityId }) => {
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Phone className="h-4 w-4 flex-shrink-0" />
-              <span>{whatsappNumber || "No phone number"}</span>
+              <span>{phoneNumber || "No phone number"}</span>
             </div>
           </div>
 

@@ -6,11 +6,10 @@ const dashboardController = require("../../controller/student/dashboardControlle
 const profileController = require("../../controller/student/profileController");
 const verifyTokenAndRole = require("../../middleware/Student/verifyTokenAndRole");
 const isProfileComplete = require("../../middleware/Student/isProfileComplete");
+const predictionController = require("../../controller/student/predictionController");
 
 router.post("/verify-email/otp", loginAndRegisterController.getMailOtP);
 router.post("/verify-otp/email", loginAndRegisterController.verifyMailOtp);
-router.post("/verify-phone/otp", loginAndRegisterController.getWhatsappOtp);
-router.post("/verify-otp/phone", loginAndRegisterController.verifyWhatsappOtp);
 router.post("/register", loginAndRegisterController.createStudentAccount);
 router.post("/login", loginAndRegisterController.loginStudent);
 router.get(
@@ -34,6 +33,12 @@ router.put(
     { name: "resume", maxCount: 1 },
   ]),
   profileController.updateStudentProfile
+);
+
+router.post(
+  "/predict",
+  verifyTokenAndRole,
+  predictionController.predictPlacement
 );
 
 module.exports = router;
