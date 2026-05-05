@@ -61,9 +61,6 @@ Follow these steps to set up the project locally.
 cd server
 npm install
 
-# Create a .env file and add your MongoDB URI, JWT Secret, and AWS credentials
-cp .env.example .env
-
 # Start the development server
 npm run dev
 ```
