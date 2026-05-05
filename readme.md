@@ -1,6 +1,5 @@
 # 🎓 Campus Recruitment Management System (CRMS)
 
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?logo=react)
 ![Node](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-339933?logo=nodedotjs)
 ![Python](https://img.shields.io/badge/AI-Python%20%2B%20FastAPI-3776AB?logo=python)
